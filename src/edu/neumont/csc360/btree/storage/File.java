@@ -65,6 +65,23 @@ public class File {
     }
 
     /**
+     * Writes the buffer starting at the location.
+     * @param buffer
+     * @param location The byte offset to begin writing.
+     */
+    public void write(int[] buffer, long location) {
+        try {
+            this.randomAccessFile.seek(location);
+            for (int bite : buffer) {
+                this.randomAccessFile.write(bite);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("IOException in File::write(int[], long)");
+        }
+    }
+
+    /**
      * Reads the buffer starting at location for length bytes.
      * @param location The starting point for the file to read.
      * @param length The number of bytes to be read, starting at location.
