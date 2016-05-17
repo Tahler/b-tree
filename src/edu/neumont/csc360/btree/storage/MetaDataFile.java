@@ -8,6 +8,9 @@ public class MetaDataFile {
     private MetaDataFile() {}
 
     public static void create(String name, int metaDataSize) {
+        if (metaDataSize < 0) {
+            throw new RuntimeException("metaDataSize cannot be less than 0. metaDataSize: " + metaDataSize);
+        }
         File.create(name);
         File file = File.open(name);
         file.writeInt(metaDataSize, 0);
