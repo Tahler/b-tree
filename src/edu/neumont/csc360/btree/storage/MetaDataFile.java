@@ -68,7 +68,7 @@ public class MetaDataFile {
      */
     public int[] read(long location, int length) {
         long offset = this.getOffset(location);
-        return this.file.read(location, length);
+        return this.file.read(offset, length);
     }
 
     private long getOffset(long location) {
