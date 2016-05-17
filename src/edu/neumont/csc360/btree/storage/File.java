@@ -16,7 +16,7 @@ public class File {
             }
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("IOException in File::create");
+            throw new RuntimeException("IOException in File::create(String)");
         }
     }
 
@@ -45,24 +45,22 @@ public class File {
             this.randomAccessFile.close();
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("IOException in File::close");
+            throw new RuntimeException("IOException in File::close()");
         }
     }
 
     /**
-     * Writes the buffer starting at the location.
-     * @param buffer
-     * @param location The byte offset to begin writing.
+     * Writes the byte to the file at the specified location.
+     * @param bite The byte (value must be between 0 and 255) to write.
+     * @param location The offset at which to write the byte.
      */
-    public void write(int[] buffer, long location) {
+    public void write(int bite, long location) {
         try {
             this.randomAccessFile.seek(location);
-            for (int bite : buffer) {
-                this.randomAccessFile.write(bite);
-            }
+            this.randomAccessFile.write(bite);
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("IOException in File::write");
+            throw new RuntimeException("IOException in File::write(int, long)");
         }
     }
 
@@ -82,7 +80,7 @@ public class File {
             return bytesRead;
         } catch (IOException e) {
             e.printStackTrace();
-            throw new RuntimeException("IOException in File::read");
+            throw new RuntimeException("IOException in File::read(long, int)");
         }
     }
 }
