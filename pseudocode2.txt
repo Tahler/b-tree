@@ -1,0 +1,561 @@
+// TODO KEEP TRACK OF WHAT I CHANGE IN THE DESIGN AS I IMPLEMENT, THINK ABOUT WHY.
+
++=File=+
+| data |
++======+
+File {
+  static create(name) {
+    if no file with name exists
+      create a new file with name
+    else
+      ERROR!
+  }
+
+  static open(name) -> File {
+    if file with name exists
+      return the opened file
+    else
+      ERROR!
+  }
+
+  delete(name) {
+    if file with name exists
+      delete the file
+    else
+      ERROR!
+  }
+
+  close() {
+    close the file
+  }
+
+  write(data, location) {
+    write the data starting from location
+  }
+
+  read(location, length) -> byte[] {
+    read the byte[] starting at location for length
+  }
+}
+
++=MetaDataFile=+
+| metaDataSize |
++--------------+
+| metaData     |
++==============+
+| data         |
++==============+
+MetaDataFile extends File {
+  metaDataSize
+  byte[] metaData
+
+  static create(name, metaDataSize) {
+    create File
+    file.write(metaDataSize, location: 0)
+  }
+
+  static open(name) -> MetaDataFile {
+    open the file with name
+    metaDataSize = file.read(0..4)
+    metaData = file.read(4..metaDataSize)
+  }
+  
+  static delete(name) {
+    delete the file with name
+  }
+  
+  close() {
+    close the file
+  }
+
+  writeMetadata(metaData) {
+    if the metaData.size == metaDataSize
+      update metaData in this instance
+      write metaData to file starting at index 4
+    else
+      ERROR! - meta data must be the same size as the metaDataSize
+  }
+
+  getMetadata() -> byte[] {
+    return metaData
+  }
+
+  write(data, location) {
+    offset = getOffset()
+    write the data starting at the offset
+  }
+
+  read(location, length) -> byte[] {
+    actualLocation = getOffset() + location
+    read the data at actualLocation for 'length' bytes
+  }
+
+  getOffset(location) -> location {
+    // 4 is the size of the metaDataSize integer
+    return location + metaDataSize + 4
+  }
+}
+
++===PersistentArray===+
+| metaDataSize        |
++---------------------+
+| count               |
+| bufferSize          |
+| nextAvailableIndex  |
+| userMetaData        |
++=====================+
+| buffer1             |
+| buffer2             |
+| ...                 |
+| bufferN             |
++=====================+
+PersistentArray extends MetaDataFile {
+  count
+  bufferSize
+  nextAvailableIndex
+
+  static create(name, metaDataSize, bufferSize) {
+    // 12 is the size of integers count, bufferSize, and nextAvailableIndex 
+    actualMetaDataSize = metaDataSize + 12
+    file = create MetaDataFile with (name, actualMetaDataSize)
+    metaData = create byte[metaDataSize]
+    metaData[0] = bufferSize
+    metaData[1] = -1 // nextAvailableIndex starts at -1, meaning the end of the file
+    write metaData to file
+  }
+
+  static open(name) -> PersistentArray {
+    open the file as a MetaDataFile with name
+    metaData = read the metadata from MetaDataFile
+    count = next int from metaData
+    bufferSize = next int from metaData
+    nextAvailableIndex = next int from metaData
+    return a PersistentArray with fields from above
+  }
+  
+  static delete(name) {
+    delete the file with name
+  }
+  
+  close() {
+    close the file
+  }
+  
+  readMetaData() {
+    byte[] metadata = get metadata from MetaDataFile
+    return metadata[8..N] // skip the first 8 bytes (bufferSize and nextAvailableIndex)
+  }
+
+  writeMetaData(byte[] metaData) {
+    copy the byte[] 
+      place buffersize and nextAvailableIndex at the beginning
+    delegate writing the new byte[] to MetaDataFile
+  }
+
+  allocate() -> index {
+    increment count
+    if nextAvailableIndex = -1
+      allocatedIndex = count - 1
+    else
+      allocatedIndex = read integer from nextAvailableIndex
+      nextAvailableIndex = allocatedIndex
+    write new metadata with updated nextAvailableIndex and count
+    return the allocatedIndex
+  }
+
+  deallocate(index) {
+    location = getLocation(index)
+    write nextAvailableIndex at location
+    nextAvailableIndex = index
+    update nextAvailableIndex in metadata
+  }
+
+  getElement(index) {
+    location = getLocation(index)
+    return the byte[] from location with bufferSize
+  }
+
+  putElement(index, byte[]) {
+    location = getLocation(index)
+    write the byte[] at location
+  }
+
+  private getLocation(index) {
+    return index * bufferSize
+  }
+}
+
+CachedPersistentArray extends PersistentArray {
+  Cache<byte[]> cache
+
+  static create(name, metaDataSize, bufferSize) {
+    delegate to PersistentArray
+  }
+
+  static open(name) -> CachedPersistentArray {
+    open PersistentArray with name
+    create a new cache
+    return the created CachedPersistentArray
+  }
+  
+  static delete(name) {
+    delete the file with name
+  }
+  
+  close() {
+    close the file
+  }
+
+  readMetaData() {
+    delegate to PersistentArray
+  }
+
+  writeMetaData(byte[] metaData) {
+    delegate to PersistentArray
+  }
+
+  allocate() -> index {
+    delegate to PersistentArray
+  }
+
+  deallocate(index) {
+    if cache contains index
+      cache.delete(index)
+    delegate to PersistentArray
+  }
+
+  getElement(index) {
+    if cache contains index
+      return the cache's element
+    else
+      return from persistent array
+        and update cache
+  }
+
+  putElement(index, byte[]) {
+    write element into cache
+    write element into PersistentArray
+  }
+}
+
+Cache {
+  map<index, LinkedListNode> // the node's data stores (index, byte[])
+  linkedList
+  maxSize
+
+  contains(index) {
+    return map.contains(index)
+  }
+
+  put(index, byte[]) {
+    create a new linkedListNode at that index containing (index, byte[])
+    if the map.contains(index)
+      get the linkedListNode at that index from map
+      delete that linkedListNode from the linkedList
+    put the entry: (index, linkedListNode) into the map
+    insert the linkedListNode at the front of the linkedList
+  }
+
+  get(index) -> byte[] {
+    get the linkedListNode at index from the map
+    get the byte[] data from linkedListNode
+    moveToFront(linkedListNode)
+    return the data
+  }
+
+  delete(index) {
+    get the linkedListNode at index from the map
+    delete the linkedListNode
+    delete the entry at index from the map
+  }
+
+  private moveToFront(linkedListNode) {
+    delete linkedListNode from the list
+    insert this node at the front of the linkedList
+    if linkedList.size > maxSize
+      remove the last linkedListNode and its entry from the map
+  }
+}
+
++======NodeStore======+
+| metaDataSize        |
++---------------------+
+| count               |
+| bufferSize          |
+| nextAvailableIndex  |
+| nodeCapacity        |
+| rootNodeIndex       |
+| userMetaData        |
++=====================+
+| buffer1             |
+| buffer2             |
+| ...                 |
+| bufferN             |
++=====================+
+NodeStore {
+  rootNodeIndex
+  nodeCapacity // number of key-value pairs per node
+  cachedPersistentArray
+
+  static create(name, nodeCapacity) {
+    create CachedPersistentArray with
+      name = name,
+      bufferSize = sizeof(Node)
+      metaDataSize = 4 + 4 // rootNodeIndex + nodeCapacity
+    write meta data containing
+      rootNodeIndex = 0,
+      nodeCapacity = nodeCapacity
+  }
+
+  static open(name) -> NodeStore {
+    open CachedPersistentArray with name
+    rootNodeIndex = read from metadata
+    nodeCapacity = read from metadata
+  }
+
+  delete(name) {
+    delete file with name
+  }
+  
+  allocateNode() -> index {
+    delegate allocation to cachedPersistentArray
+  }
+
+  deallocateNode() {
+    deallocate from cachedPersistentArray
+  }
+
+  putNode(index, node) {
+    byte[] = node.toByteArray()
+    write byte[] to cachedPersistentArray
+  }
+  
+  addNode(node) {
+    index = allocateNode()
+    putNode(index, node)
+  }
+
+  getNode(index) -> Node {
+    byte[] = get byte[] from cachedPersistentArray
+    node = Node.fromByteArray(byte[])
+    return node
+  }
+
+  setRootNodeIndex(index) {
+    update the rootNodeIndex in memory and rewrite the metadata
+  }
+
+  getRootNode() -> Node {
+    return getNode(rootNodeIndex)
+  }
+}
+
+BTree {
+  nodeStore
+  rootNode
+  nodeCapacity
+
+  static create(name, nodeCapacity) {
+    nodeStore.create(name, nodeCapacity)
+    rootNode = create new node
+      with nodeCapacity
+    write rootNode to nodeStore
+  }
+
+  static open(name) -> BTree {
+    btree = create new BTree
+      nodeStore = open nodeStore with name
+      rootNode = read node from nodeStore.rootNodeIndex
+    return btree
+  }
+
+  static delete(name) {
+    delete the file with name
+  }
+
+  addKey(key, value) {
+    root = nodeStore.getRootNode()
+    root.addKey(key, value)
+  }
+
+  deleteKey(key) {
+    root = nodeStore.getRootNode()
+    root.deleteKey(key)
+  }
+
+  getValue(key) -> value {
+    root = nodeStore.getRootNode()
+    root.getValue(key)
+  }
+
+  updateKeysValue(key, value) {
+    root = nodeStore.getRootNode()
+    root.updateKeysValue(key, value)
+  }
+}
+
+Node {
+  // these variables are not stored on disk
+  btree // for accessing nodeStore and capacity
+  parentNode
+  index
+
+  // these variables are stored on disk
+  size
+  KeyValuePair[] data
+  
+  addKey(key, value) {
+    child = childWithKey(key)
+    child.addKey(key, value)
+    rewrite this node
+  }
+  
+  getValue(key) -> value {
+    child = childWithKey(key)
+    return child.getValue(key)
+  }
+
+  updateKeysValue(key, value) {
+    child = childWithKey(key)
+    child.updateKeysValue(key, value)
+  }
+  
+  deleteKey(key) {
+    child = childWithKey(key)
+    child.deleteKey(key)
+  }
+  
+  private childWithKey(key) -> Node {
+    found = false
+    foreach kvp in data
+      if key < kvp.key
+        childIndex = kvp.value
+        found = true
+    if not found
+      childIndex = last value in data
+    childNode = read node at childIndex from nodeStore
+    return childNode
+  }
+
+  private splitAndAdd(key, value) {
+    firstHalf = first half of this.data
+    secondHalf = second half of this.data
+
+    otherNode = create node with data as secondHalf
+    if this node is a leaf node
+      then otherNode is a leaf node
+    else
+      then otherNode is a regular node
+
+    this.size = this.size / 2
+    this.data = firstHalf
+
+    add the key to the respective node // TODO kind of a magic step
+    rewrite this node
+    write otherNode
+
+    // update parent
+    thisMax = last key in this node
+    otherMax = last key in otherNode
+
+    if this.parent is null // this node was the root
+      newRoot = create a new node containing routes to this node and otherNode
+      write newRoot and the newly updated rootNodeIndex
+      btree.root = newRoot
+      // the next two lines are not actually necessary
+      this.parent = newRoot
+      otherNode.parent = newRoot
+    else
+      insert the route to otherNode into this.parent (using otherMax)
+      update the route to this node (using thisMax)
+  }
+  
+  private isFull() -> bool {
+    return size == capacity
+  }
+      
+  // helper method for splitAndAdd
+  private insertKeyFromChild(key, value) {
+    if this.isFull()
+      this.splitAndAdd(this, key, value)
+    else // can only be a larger key
+      last open spot in data = new KeyValuePair(key, value)
+      increment this.size
+      rewrite this node in nodeStore
+  }
+
+  // helper method for updating the value of the key 
+  private updateKeyToRoute(index, key) { // index is the value in the key value pair
+    binary search this.data for the value equal to index
+    update the key to equal the key argument
+    sort this.data by key
+    rewrite this node
+  }
+
+  // helper method for collapsing nodes
+  private deleteKeyFromChild(key) {
+    binary search this.data for the key
+    delete the entry from this.data
+    decrement this.size
+    shift this.data elements left to fill the gap
+    if this.data is now empty
+      if this node is root
+        reset the btree
+          root is now a new LeafNode
+          nodeStore should be forced to utilize index 0 rather than skip element space
+      else
+        parent.deleteKeyFromChild
+  }
+
+  // helper method for reading Nodes
+  static fromByteArray(byte[]) -> Node {
+    instantiate the node from the byte[]
+  }
+
+  // helper method for writing Nodes
+  toByteArray() -> byte[] {
+    serialize this node as a byte[]
+  }
+}
+
+LeafNode extends Node {
+  addKey(key, value) {
+    if this.isFull()
+      splitAndAdd(key, value) // in Node::splitAndAdd
+    else
+      insert the key value pair into this.data
+        by traversing from right to left
+      if the max key increased
+        update this.parent's route to this node (Node::updateKey)
+      rewrite this node
+  }
+  
+  getValue(key) -> value {
+    return searchForKvp(key).value
+  }
+
+  updateKeysValue(key, value) {
+    toBeUpdated = this.searchForKvp(key)
+    toBeUpdated.value = value
+    rewrite this node
+  }
+  
+  deleteKey(key) {
+    binary search for key
+    delete the entry from this.data
+    shift rightmost elements to the left to fill in the gap
+    decrement this.size
+    if this node is now empty
+      parent.deleteKeyFromChild()
+      deallocate this node from nodeStore 
+    else 
+      if the deleted key was the max
+        update the parent's route to this node
+      rewrite this node
+  }
+  
+  private searchForKvp(key) -> (key, value) {
+    binary search through this.data
+    return the key value pair with key
+  }
+}
