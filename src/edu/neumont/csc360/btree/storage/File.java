@@ -65,6 +65,21 @@ public class File {
     }
 
     /**
+     * Writes a 4-byte integer to the file at the specified location.
+     * @param integer The integer (value must be between 0 and 255) to write.
+     * @param location The offset at which to write the byte.
+     */
+    public void writeInt(int integer, long location) {
+        try {
+            this.randomAccessFile.seek(location);
+            this.randomAccessFile.writeInt(integer);
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("IOException in File::writeInt(int, long)");
+        }
+    }
+
+    /**
      * Writes the buffer starting at the location.
      * @param buffer
      * @param location The byte offset to begin writing.
@@ -78,6 +93,36 @@ public class File {
         } catch (IOException e) {
             e.printStackTrace();
             throw new RuntimeException("IOException in File::write(int[], long)");
+        }
+    }
+
+    /**
+     * Reads the byte at location.
+     * @param location The offset to read from.
+     * @return An int with a value between 0 and 255.
+     */
+    public int readByte(long location) {
+        try {
+            this.randomAccessFile.seek(location);
+            return this.randomAccessFile.read();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("IOException in File::readByte(long)");
+        }
+    }
+
+    /**
+     * Reads the 4-byte integer at location.
+     * @param location The offset to read from.
+     * @return The integer read from location.
+     */
+    public int readInt(long location) {
+        try {
+            this.randomAccessFile.seek(location);
+            return this.randomAccessFile.readInt();
+        } catch (IOException e) {
+            e.printStackTrace();
+            throw new RuntimeException("IOException in File::readByte(long)");
         }
     }
 
