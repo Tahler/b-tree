@@ -1,0 +1,4 @@
+- Added specific helper methods for reading and writing integers in the base File class.
+- byte arrays have to be int arrays in Java because of the lack of unsigned bytes. Only one byte is written per int to
+  file still, however.
+- Had a small error in MetaDataFile::read, easily seen and fixed
