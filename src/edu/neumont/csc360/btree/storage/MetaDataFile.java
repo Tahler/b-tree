@@ -5,6 +5,8 @@ public class MetaDataFile {
     private int metaDataSize;
     private int[] metaData;
 
+    private MetaDataFile() {}
+
     public static void create(String name, int metaDataSize) {
         File.create(name);
         File file = File.open(name);

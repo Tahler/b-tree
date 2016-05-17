@@ -7,6 +7,8 @@ import java.io.RandomAccessFile;
 public class File {
     private RandomAccessFile randomAccessFile;
 
+    private File() {}
+
     public static void create(String name) {
         java.io.File file = new java.io.File(name);
         try {
