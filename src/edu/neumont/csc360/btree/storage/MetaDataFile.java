@@ -7,6 +7,11 @@ public class MetaDataFile {
 
     private MetaDataFile() {}
 
+    /**
+     * Creates a MetaDataFile with name and the ability to hold metaDataSize bytes in its metadata
+     * @param name The name of the file to be created.
+     * @param metaDataSize The number of bytes allowed in the file's metadata.
+     */
     public static void create(String name, int metaDataSize) {
         if (metaDataSize < 0) {
             throw new RuntimeException("metaDataSize cannot be less than 0. metaDataSize: " + metaDataSize);
