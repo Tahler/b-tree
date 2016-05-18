@@ -1,7 +1,5 @@
 package edu.neumont.csc360.btree.storage.cache;
 
-import sun.misc.LRUCache;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +21,10 @@ public class Cache<K, V> {
     }
 
     public void put(K key, V value) {
+        if (this.containsKey(key)) {
+            LinkedList.Node<KeyValuePair<K, V>> node = this.map.get(key);
+            this.lruList.remove(node);
+        }
         KeyValuePair<K, V> kvp = new KeyValuePair<>(key, value);
         this.lruList.prepend(kvp);
         LinkedList.Node<KeyValuePair<K, V>> inserted = this.lruList.getHead();
