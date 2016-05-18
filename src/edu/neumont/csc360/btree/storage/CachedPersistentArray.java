@@ -10,7 +10,7 @@ public class CachedPersistentArray {
 
     private CachedPersistentArray() {}
 
-    public static void create(String name, int metadataSize, int bufferSize, int cacheSize) {
+    public static void create(String name, int metadataSize, int bufferSize) {
         PersistentArray.create(name, metadataSize, bufferSize);
     }
 
