@@ -89,6 +89,16 @@ public class PersistentArray {
         this.decrementCount();
     }
 
+    public int[] getBuffer(int index) {
+        long location = this.getLocation(index);
+        return this.metadataFile.read(location, this.bufferSize);
+    }
+    
+    public void putBuffer(int index, int[] bytes) {
+        long location = this.getLocation(index);
+        this.metadataFile.write(bytes, location);
+    }
+
     private void incrementCount() {
         this.count += 1;
         this.metadataFile.writeInt(this.count, COUNT_LOCATION);
