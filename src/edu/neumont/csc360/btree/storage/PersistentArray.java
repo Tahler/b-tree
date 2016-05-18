@@ -1,8 +1,9 @@
 package edu.neumont.csc360.btree.storage;
 
 public class PersistentArray {
+    private static final int PERSISTENT_ARRAY_METADATA_SIZE = 12;
+
     private MetadataFile metadataFile;
-    private static final int METADATA_SIZE = 12;
     private int count;
     private int bufferSize;
     private int nextAvailableIndex;
@@ -25,27 +26,24 @@ public class PersistentArray {
         }
         
         // 12 is the size of integers count, bufferSize, and nextAvailableIndex
-        int actualMetadataSize = metadataSize + METADATA_SIZE;
-        MetadataFile.create(name, actualMetadataSize);
+        MetadataFile.create(name, metadataSize);
 
         int count = 0;
         int nextAvailableIndex = -1;
-        int[] metadata = new int[actualMetadataSize];
-        metadata[0] = count;
-        metadata[1] = bufferSize;
-        metadata[2] = nextAvailableIndex;
 
         MetadataFile metadataFile = MetadataFile.open(name);
-        metadataFile.writeMetadata(metadata);
+        metadataFile.writeInt(count, 0);
+        metadataFile.writeInt(bufferSize, 4);
+        metadataFile.writeInt(nextAvailableIndex, 8);
     }
     
     public static PersistentArray open(String name) {
         PersistentArray persistentArray = new PersistentArray();
-        persistentArray.metadataFile = MetadataFile.open(name);
-        int[] metadata = persistentArray.metadataFile.getMetadata();
-        persistentArray.count = metadata[0];
-        persistentArray.bufferSize = metadata[1];
-        persistentArray.nextAvailableIndex = metadata[2];
+        MetadataFile metadataFile = MetadataFile.open(name);
+        persistentArray.metadataFile = metadataFile;
+        persistentArray.count = metadataFile.readInt(0);
+        persistentArray.bufferSize = metadataFile.readInt(4);
+        persistentArray.nextAvailableIndex = metadataFile.readInt(8);
         return persistentArray;
     }
 
@@ -57,17 +55,11 @@ public class PersistentArray {
         this.metadataFile.close();
     }
 
-    public int[] readMetadata() {
-        return new int[0]; // tODO
+    public int[] getMetadata() {
+        return this.metadataFile.getMetadata();
     }
 
     public void writeMetadata(int[] metadata) {
-        int userMetadataSize = this.metadataFile.getMetadataSize() - METADATA_SIZE;
-        if (metadata.length != userMetadataSize) {
-            throw new RuntimeException("The length of metadata must be exactly metadataSize. " +
-                    "(metadata.length: " + metadata.length + ", metadataSize: " + userMetadataSize + ")");
-        }
-        int[] copied = new int[metadata.length + 12];
-//        this.metadataFile.writeMetadata(); // TODO
+        this.metadataFile.writeMetadata(metadata);
     }
 }

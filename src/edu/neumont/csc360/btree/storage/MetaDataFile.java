@@ -37,6 +37,10 @@ public class MetadataFile {
         this.file.close();
     }
 
+    public int[] getMetadata() {
+        return this.metadata;
+    }
+
     /**
      * Directly writes the byte array to disk. The length of metadata must be exactly the metadataSize.
      * @param metadata The byte array, with each value being 0-255, to be written as the metadata.
@@ -50,6 +54,10 @@ public class MetadataFile {
         this.file.write(metadata, 4);
     }
 
+    public int getMetadataSize() {
+        return this.metadataSize;
+    }
+
     /**
      * Writes the entire buffer as a byte[] to the file.
      * @param buffer The byte array to write, with each int value being between 0 and 255.
@@ -58,6 +66,16 @@ public class MetadataFile {
     public void write(int[] buffer, long location) {
         long offset = this.getOffset(location);
         this.file.write(buffer, offset);
+    }
+
+    /**
+     * Writes a 4-byte integer to the file at the specified location.
+     * @param integer The integer (value must be between 0 and 255) to write.
+     * @param location The offset at which to write the byte.
+     */
+    public void writeInt(int integer, long location) {
+        long offset = this.getOffset(location);
+        this.file.writeInt(integer, offset);
     }
 
     /**
@@ -71,15 +89,17 @@ public class MetadataFile {
         return this.file.read(offset, length);
     }
 
+    /**
+     * Reads the 4-byte integer at location.
+     * @param location The offset to read from.
+     * @return The integer read from location.
+     */
+    public int readInt(long location) {
+        long offset = this.getOffset(location);
+        return this.file.readInt(offset);
+    }
+
     private long getOffset(long location) {
         return 4 + this.metadataSize + location;
-    }
-
-    public int getMetadataSize() {
-        return this.metadataSize;
-    }
-
-    public int[] getMetadata() {
-        return this.metadata;
     }
 }
