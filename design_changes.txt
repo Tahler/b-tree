@@ -6,3 +6,5 @@
 - In the design, the PersistentArray would take some metadata space of the MetadataFile that it uses. This requires some
   array copying and annoyingly writing an int into a byte[]. I will instead let the PersistentArray chunk more of the
   file and set another offset, similar to how MetadataFile has an offset for reading and writing data.
+- Forgot a close() in NodeStore
+-
