@@ -1,32 +1,32 @@
 package edu.neumont.csc360.btree.storage;
 
-public class MetaDataFile {
+public class MetadataFile {
     private File file;
-    private int metaDataSize;
-    private int[] metaData;
+    private int metadataSize;
+    private int[] metadata;
 
-    private MetaDataFile() {}
+    private MetadataFile() {}
 
     /**
-     * Creates a MetaDataFile with name and the ability to hold metaDataSize bytes in its metadata
+     * Creates a MetadataFile with name and the ability to hold metadataSize bytes in its metadata
      * @param name The name of the file to be created.
-     * @param metaDataSize The number of bytes allowed in the file's metadata.
+     * @param metadataSize The number of bytes allowed in the file's metadata.
      */
-    public static void create(String name, int metaDataSize) {
-        if (metaDataSize < 0) {
-            throw new RuntimeException("metaDataSize cannot be less than 0. metaDataSize: " + metaDataSize);
+    public static void create(String name, int metadataSize) {
+        if (metadataSize < 0) {
+            throw new RuntimeException("metadataSize cannot be less than 0. metadataSize: " + metadataSize);
         }
         File.create(name);
         File file = File.open(name);
-        file.writeInt(metaDataSize, 0);
+        file.writeInt(metadataSize, 0);
     }
 
-    public static MetaDataFile open(String name) {
-        MetaDataFile metaDataFile = new MetaDataFile();
-        metaDataFile.file = File.open(name);
-        metaDataFile.metaDataSize = metaDataFile.file.readInt(0);
-        metaDataFile.metaData = metaDataFile.file.read(4, metaDataFile.metaDataSize);
-        return metaDataFile;
+    public static MetadataFile open(String name) {
+        MetadataFile metadataFile = new MetadataFile();
+        metadataFile.file = File.open(name);
+        metadataFile.metadataSize = metadataFile.file.readInt(0);
+        metadataFile.metadata = metadataFile.file.read(4, metadataFile.metadataSize);
+        return metadataFile;
     }
 
     public static void delete(String name) {
@@ -38,16 +38,16 @@ public class MetaDataFile {
     }
 
     /**
-     * Directly writes the byte array to disk. The length of metaData must be exactly the metaDataSize.
-     * @param metaData The byte array, with each value being 0-255, to be written as the metaData.
+     * Directly writes the byte array to disk. The length of metadata must be exactly the metadataSize.
+     * @param metadata The byte array, with each value being 0-255, to be written as the metadata.
      */
-    public void writeMetaData(int[] metaData) {
-        if (metaData.length != this.metaDataSize) {
-            throw new RuntimeException("The length of metaData must be exactly metaDataSize. " +
-                    "(metaData.length: " + metaData.length + ", metaDataSize: " + this.metaDataSize + ")");
+    public void writeMetadata(int[] metadata) {
+        if (metadata.length != this.metadataSize) {
+            throw new RuntimeException("The length of metadata must be exactly metadataSize. " +
+                    "(metadata.length: " + metadata.length + ", metadataSize: " + this.metadataSize + ")");
         }
-        this.metaData = metaData;
-        this.file.write(metaData, 4);
+        this.metadata = metadata;
+        this.file.write(metadata, 4);
     }
 
     /**
@@ -72,14 +72,14 @@ public class MetaDataFile {
     }
 
     private long getOffset(long location) {
-        return 4 + this.metaDataSize + location;
+        return 4 + this.metadataSize + location;
     }
 
-    public int getMetaDataSize() {
-        return this.metaDataSize;
+    public int getMetadataSize() {
+        return this.metadataSize;
     }
 
-    public int[] getMetaData() {
-        return this.metaData;
+    public int[] getMetadata() {
+        return this.metadata;
     }
 }
