@@ -90,11 +90,19 @@ public class PersistentArray {
     }
 
     public int[] getBuffer(int index) {
+        if (index >= this.count) {
+            throw new RuntimeException("Index cannot be greater than the size of the PersistentArray. " +
+                    "PersistentArray.size: " + this.count + ", index: " + index + ".");
+        }
         long location = this.getLocation(index);
         return this.metadataFile.read(location, this.bufferSize);
     }
 
     public void putBuffer(int index, int[] bytes) {
+        if (index >= this.count) {
+            throw new RuntimeException("Index cannot be greater than the size of the PersistentArray. " +
+                    "PersistentArray.size: " + this.count + ", index: " + index + ".");
+        }
         long location = this.getLocation(index);
         this.metadataFile.write(location, bytes);
     }
