@@ -2,3 +2,4 @@
 - byte arrays have to be int arrays in Java because of the lack of unsigned bytes. Only one byte is written per int to
   file still, however.
 - Had a small error in MetaDataFile::read, easily seen and fixed
+- Left out a small detail in PersistentArray::create, easily seen and fixed

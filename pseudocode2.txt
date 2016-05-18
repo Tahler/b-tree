@@ -119,8 +119,9 @@ PersistentArray extends MetaDataFile {
     actualMetaDataSize = metaDataSize + 12
     file = create MetaDataFile with (name, actualMetaDataSize)
     metaData = create byte[metaDataSize]
-    metaData[0] = bufferSize
-    metaData[1] = -1 // nextAvailableIndex starts at -1, meaning the end of the file
+    metaData[0] = count
+    metaData[1] = bufferSize
+    metaData[2] = -1 // nextAvailableIndex starts at -1, meaning the end of the file
     write metaData to file
   }
 
