@@ -2,6 +2,9 @@ package edu.neumont.csc360.btree.storage;
 
 public class PersistentArray {
     private static final int PERSISTENT_ARRAY_METADATA_SIZE = 12;
+    private static final int COUNT_LOCATION = 0;
+    private static final int BUFFER_SIZE_LOCATION = 4;
+    private static final int NEXT_AVAILABLE_INDEX_LOCATION = 8;
 
     private MetadataFile metadataFile;
     private int count;
@@ -21,8 +24,8 @@ public class PersistentArray {
         if (metadataSize < 0) {
             throw new RuntimeException("metadataSize cannot be less than 0. metadataSize: " + metadataSize);
         }
-        if (bufferSize < 0) {
-            throw new RuntimeException("bufferSize cannot be less than 0. bufferSize: " + bufferSize);
+        if (bufferSize < 4) {
+            throw new RuntimeException("bufferSize cannot be less than 4. bufferSize: " + bufferSize);
         }
         
         // 12 is the size of integers count, bufferSize, and nextAvailableIndex
@@ -32,18 +35,18 @@ public class PersistentArray {
         int nextAvailableIndex = -1;
 
         MetadataFile metadataFile = MetadataFile.open(name);
-        metadataFile.writeInt(count, 0);
-        metadataFile.writeInt(bufferSize, 4);
-        metadataFile.writeInt(nextAvailableIndex, 8);
+        metadataFile.writeInt(count, COUNT_LOCATION);
+        metadataFile.writeInt(bufferSize, BUFFER_SIZE_LOCATION);
+        metadataFile.writeInt(nextAvailableIndex, NEXT_AVAILABLE_INDEX_LOCATION);
     }
     
     public static PersistentArray open(String name) {
         PersistentArray persistentArray = new PersistentArray();
         MetadataFile metadataFile = MetadataFile.open(name);
         persistentArray.metadataFile = metadataFile;
-        persistentArray.count = metadataFile.readInt(0);
-        persistentArray.bufferSize = metadataFile.readInt(4);
-        persistentArray.nextAvailableIndex = metadataFile.readInt(8);
+        persistentArray.count = metadataFile.readInt(COUNT_LOCATION);
+        persistentArray.bufferSize = metadataFile.readInt(BUFFER_SIZE_LOCATION);
+        persistentArray.nextAvailableIndex = metadataFile.readInt(NEXT_AVAILABLE_INDEX_LOCATION);
         return persistentArray;
     }
 
@@ -61,5 +64,56 @@ public class PersistentArray {
 
     public void writeMetadata(int[] metadata) {
         this.metadataFile.writeMetadata(metadata);
+    }
+
+    /**
+     * Allocates space in the file for a new buffer of bufferSize. Returns the index of the allocated space.
+     * @return The index of the allocated space.
+     */
+    public int allocate() {
+        int allocatedIndex;
+        if (this.nextAvailableIndex == -1) {
+            allocatedIndex = this.count;
+        } else {
+            allocatedIndex = this.nextAvailableIndex;
+            this.nextAvailableIndex = this.readIntFromBlock(allocatedIndex);
+        }
+        this.incrementCount();
+        return allocatedIndex;
+    }
+
+    public void deallocate(int index) {
+        this.writeIntToBlock(this.nextAvailableIndex, index);
+        this.nextAvailableIndex = index;
+        this.metadataFile.writeInt(this.nextAvailableIndex, NEXT_AVAILABLE_INDEX_LOCATION);
+        this.decrementCount();
+    }
+
+    private void incrementCount() {
+        this.count += 1;
+        this.metadataFile.writeInt(this.count, COUNT_LOCATION);
+    }
+
+    private void decrementCount() {
+        this.count -= 1;
+        this.metadataFile.writeInt(this.count, COUNT_LOCATION);
+    }
+
+    private int readIntFromBlock(int index) {
+        long location = this.getLocation(index);
+        return this.metadataFile.readInt(location);
+    }
+
+    private void writeIntToBlock(int integer, int index) {
+        long location = this.getLocation(index);
+        this.metadataFile.writeInt(integer, location);
+    }
+
+    private long getOffset() {
+        return PERSISTENT_ARRAY_METADATA_SIZE;
+    }
+
+    private long getLocation(int index) {
+        return PERSISTENT_ARRAY_METADATA_SIZE + this.bufferSize * index;
     }
 }
