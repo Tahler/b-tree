@@ -60,20 +60,20 @@ public class MetadataFile {
 
     /**
      * Writes the entire buffer as a byte[] to the file.
-     * @param buffer The byte array to write, with each int value being between 0 and 255.
      * @param location The location to write to
+     * @param buffer The byte array to write, with each int value being between 0 and 255.
      */
-    public void write(int[] buffer, long location) {
+    public void write(long location, int[] buffer) {
         long offset = this.getOffset(location);
         this.file.write(buffer, offset);
     }
 
     /**
      * Writes a 4-byte integer to the file at the specified location.
-     * @param integer The integer (value must be between 0 and 255) to write.
      * @param location The offset at which to write the byte.
+     * @param integer The integer (value must be between 0 and 255) to write.
      */
-    public void writeInt(int integer, long location) {
+    public void writeInt(long location, int integer) {
         long offset = this.getOffset(location);
         this.file.writeInt(integer, offset);
     }

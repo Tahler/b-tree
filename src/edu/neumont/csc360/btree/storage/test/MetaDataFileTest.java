@@ -40,7 +40,7 @@ public class MetadataFileTest {
         MetadataFile metadataFile = MetadataFile.open(testFile);
 
         int[] buffer = new int[] { 0, 1, 2, 3, 4, 5, 6, 7 };
-        metadataFile.write(buffer, 0);
+        metadataFile.write(0, buffer);
         int[] readBuffer = metadataFile.read(0, buffer.length);
         Assert.assertArrayEquals(buffer, readBuffer);
     }

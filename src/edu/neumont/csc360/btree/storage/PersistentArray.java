@@ -35,9 +35,9 @@ public class PersistentArray {
         int nextAvailableIndex = -1;
 
         MetadataFile metadataFile = MetadataFile.open(name);
-        metadataFile.writeInt(count, COUNT_LOCATION);
-        metadataFile.writeInt(bufferSize, BUFFER_SIZE_LOCATION);
-        metadataFile.writeInt(nextAvailableIndex, NEXT_AVAILABLE_INDEX_LOCATION);
+        metadataFile.writeInt(COUNT_LOCATION, count);
+        metadataFile.writeInt(BUFFER_SIZE_LOCATION, bufferSize);
+        metadataFile.writeInt(NEXT_AVAILABLE_INDEX_LOCATION, nextAvailableIndex);
     }
     
     public static PersistentArray open(String name) {
@@ -85,7 +85,7 @@ public class PersistentArray {
     public void deallocate(int index) {
         this.writeIntToBlock(this.nextAvailableIndex, index);
         this.nextAvailableIndex = index;
-        this.metadataFile.writeInt(this.nextAvailableIndex, NEXT_AVAILABLE_INDEX_LOCATION);
+        this.metadataFile.writeInt(NEXT_AVAILABLE_INDEX_LOCATION, this.nextAvailableIndex);
         this.decrementCount();
     }
 
@@ -93,20 +93,20 @@ public class PersistentArray {
         long location = this.getLocation(index);
         return this.metadataFile.read(location, this.bufferSize);
     }
-    
+
     public void putBuffer(int index, int[] bytes) {
         long location = this.getLocation(index);
-        this.metadataFile.write(bytes, location);
+        this.metadataFile.write(location, bytes);
     }
 
     private void incrementCount() {
         this.count += 1;
-        this.metadataFile.writeInt(this.count, COUNT_LOCATION);
+        this.metadataFile.writeInt(COUNT_LOCATION, this.count);
     }
 
     private void decrementCount() {
         this.count -= 1;
-        this.metadataFile.writeInt(this.count, COUNT_LOCATION);
+        this.metadataFile.writeInt(COUNT_LOCATION, this.count);
     }
 
     private int readIntFromBlock(int index) {
@@ -116,7 +116,7 @@ public class PersistentArray {
 
     private void writeIntToBlock(int integer, int index) {
         long location = this.getLocation(index);
-        this.metadataFile.writeInt(integer, location);
+        this.metadataFile.writeInt(location, integer);
     }
 
     private long getOffset() {
