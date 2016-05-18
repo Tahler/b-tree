@@ -119,10 +119,6 @@ public class PersistentArray {
         this.metadataFile.writeInt(location, integer);
     }
 
-    private long getOffset() {
-        return PERSISTENT_ARRAY_METADATA_SIZE;
-    }
-
     private long getLocation(int index) {
         return PERSISTENT_ARRAY_METADATA_SIZE + this.bufferSize * index;
     }
