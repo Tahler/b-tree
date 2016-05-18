@@ -60,7 +60,7 @@ public class CachedPersistentArray {
     }
 
     private class Buffer {
-        int[] data;
+        private int[] data;
 
         public Buffer(int[] data) {
             this.data = data;
