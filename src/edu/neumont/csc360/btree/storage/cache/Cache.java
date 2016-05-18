@@ -34,7 +34,7 @@ public class Cache<K, V> {
         LinkedList.Node<KeyValuePair<K, V>> node = this.map.get(key);
         V data = null;
         if (node != null) {
-            data = node.getData().getValue();
+            data = node.getData().value;
             this.lruList.moveToHead(node);
         }
         return data;
@@ -42,19 +42,17 @@ public class Cache<K, V> {
 
     public void updateValue(K key, V value) {
         LinkedList.Node<KeyValuePair<K, V>> node = this.map.get(key);
-        V data = null;
         if (node != null) {
-            node.getData().setValue(value);
+            node.getData().value = value;
             this.lruList.moveToHead(node);
         }
     }
 
     public V remove(K key) {
         LinkedList.Node<KeyValuePair<K, V>> node = this.map.remove(key);
-        V data = null;
-        if (node != null) {
-            data = this.lruList.remove(node).getValue();
-        }
+        V data = node == null
+                ? null
+                : this.lruList.remove(node).value;
         return data;
     }
 
@@ -64,7 +62,7 @@ public class Cache<K, V> {
     }
 
     private void diminishIfNecessary() {
-        if (this.size > this.sizeLimit) {
+        while (this.size > this.sizeLimit) {
             KeyValuePair<K, V> removedKvp = this.lruList.removeTail();
             this.map.remove(removedKvp.key);
         }
@@ -76,22 +74,6 @@ public class Cache<K, V> {
 
         public KeyValuePair(K key, V value) {
             this.key = key;
-            this.value = value;
-        }
-
-        public K getKey() {
-            return this.key;
-        }
-
-        public void setKey(K key) {
-            this.key = key;
-        }
-
-        public V getValue() {
-            return this.value;
-        }
-
-        public void setValue(V value) {
             this.value = value;
         }
     }
