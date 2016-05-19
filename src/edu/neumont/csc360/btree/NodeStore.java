@@ -1,6 +1,5 @@
-package edu.neumont.csc360.btree.storage;
+package edu.neumont.csc360.btree;
 
-import edu.neumont.csc360.btree.storage.cache.Cache;
 import edu.neumont.csc360.btree.utils.ByteUtils;
 
 public class NodeStore {
@@ -66,7 +65,7 @@ public class NodeStore {
     }
 
     public void putNode(int index, Node node) {
-        // TODO
+        node.toByteArray()
     }
 
     public void addNode(Node node) {

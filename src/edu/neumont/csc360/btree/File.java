@@ -1,4 +1,4 @@
-package edu.neumont.csc360.btree.storage;
+package edu.neumont.csc360.btree;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;

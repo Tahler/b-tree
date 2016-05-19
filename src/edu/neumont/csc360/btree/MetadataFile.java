@@ -1,4 +1,4 @@
-package edu.neumont.csc360.btree.storage;
+package edu.neumont.csc360.btree;
 
 public class MetadataFile {
     private File file;

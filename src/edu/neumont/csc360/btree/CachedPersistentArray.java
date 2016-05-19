@@ -1,6 +1,6 @@
-package edu.neumont.csc360.btree.storage;
+package edu.neumont.csc360.btree;
 
-import edu.neumont.csc360.btree.storage.cache.Cache;
+import edu.neumont.csc360.btree.cache.Cache;
 
 public class CachedPersistentArray {
     private static final int CACHE_SIZE = 10;

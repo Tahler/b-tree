@@ -1,7 +1,5 @@
 package edu.neumont.csc360.btree;
 
-import edu.neumont.csc360.btree.storage.NodeStore;
-
 public class BTree {
     protected NodeStore nodeStore;
     protected Node root;

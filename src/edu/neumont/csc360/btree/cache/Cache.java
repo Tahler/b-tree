@@ -1,4 +1,4 @@
-package edu.neumont.csc360.btree.storage.cache;
+package edu.neumont.csc360.btree.cache;
 
 import java.util.HashMap;
 import java.util.Map;

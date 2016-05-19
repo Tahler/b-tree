@@ -1,4 +1,4 @@
-package edu.neumont.csc360.btree.storage.cache;
+package edu.neumont.csc360.btree.cache;
 
 public class LinkedList<T> {
     private int size;

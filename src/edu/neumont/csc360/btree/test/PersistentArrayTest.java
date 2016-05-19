@@ -1,14 +1,11 @@
-package edu.neumont.csc360.btree.storage.test;
+package edu.neumont.csc360.btree.test;
 
-import edu.neumont.csc360.btree.storage.MetadataFile;
-import edu.neumont.csc360.btree.storage.PersistentArray;
+import edu.neumont.csc360.btree.PersistentArray;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
-
-import static org.junit.Assert.*;
 
 public class PersistentArrayTest {
     public static final String testFile = "testfile";

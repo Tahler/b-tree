@@ -1,6 +1,6 @@
-package edu.neumont.csc360.btree.storage.test;
+package edu.neumont.csc360.btree.test;
 
-import edu.neumont.csc360.btree.storage.MetadataFile;
+import edu.neumont.csc360.btree.MetadataFile;
 import org.junit.Assert;
 import org.junit.Test;
 

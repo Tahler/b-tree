@@ -1,4 +1,4 @@
-package edu.neumont.csc360.btree.storage;
+package edu.neumont.csc360.btree;
 
 public class PersistentArray {
     private static final int PERSISTENT_ARRAY_METADATA_SIZE = 12;
