@@ -7,4 +7,5 @@
   array copying and annoyingly writing an int into a byte[]. I will instead let the PersistentArray chunk more of the
   file and set another offset, similar to how MetadataFile has an offset for reading and writing data.
 - Forgot a close() in NodeStore
--
+- Scrapped the inheritance thing and just did a check at anytime inheritance would have been used. It got rid of using
+  `instanceof` and simplified writing a Node/LeafNode to the file.
