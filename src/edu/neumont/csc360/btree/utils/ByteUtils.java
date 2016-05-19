@@ -1,27 +1,39 @@
 package edu.neumont.csc360.btree.utils;
 
 public class ByteUtils {
-    public static int[] bytesFromInt(int value) {
-        int byte0Mask = 0xFF_00_00_00;
-        int byte1Mask = 0x00_FF_00_00;
-        int byte2Mask = 0x00_00_FF_00;
-        int byte3Mask = 0x00_00_00_FF;
-        int byte0 = (value & byte0Mask) >> 23;
-        int byte1 = (value & byte1Mask) >> 15;
-        int byte2 = (value & byte2Mask) >> 7;
-        int byte3 = (value & byte3Mask) >> 0;
-        return new int[] { byte0, byte1, byte2, byte3 };
+    public static void writeBytesFromIntToByteArray(int integer, int[] destArray, int start) {
+        int[] intBytes = new int[] {
+                (integer & 0xFF_00_00_00) >> 23,
+                (integer & 0x00_FF_00_00) >> 15,
+                (integer & 0x00_00_FF_00) >> 7,
+                (integer & 0x00_00_00_FF)
+        };
+        System.arraycopy(intBytes, 0, destArray, start, intBytes.length);
     }
 
-    public static int intFromBytes(int[] bytes) {
-        int byte0 = bytes[0];
-        int byte1 = bytes[1];
-        int byte2 = bytes[2];
-        int byte3 = bytes[3];
+    public static int[] bytesFromInt(int integer) {
+        int[] intBytes = new int[4];
+        writeBytesFromIntToByteArray(integer, intBytes, 0);
+        return intBytes;
+    }
+
+    public static int intFromBytesInByteArray(int[] srcArray, int start) {
+        int byte0 = srcArray[start];
+        int byte1 = srcArray[start + 1];
+        int byte2 = srcArray[start + 2];
+        int byte3 = srcArray[start + 3];
         int byte0Shifted = byte0 << 23;
         int byte1Shifted = byte1 << 15;
         int byte2Shifted = byte2 << 7;
-        int byte3Shifted = byte3 << 0;
+        int byte3Shifted = byte3;
         return byte0Shifted + byte1Shifted + byte2Shifted + byte3Shifted;
+    }
+
+    public static int intFromBytes(int[] bytes) {
+        return intFromBytesInByteArray(bytes, 0);
+    }
+
+    public static boolean booleanFromByteInByteArray(int[] srcArray, int index) {
+        return srcArray[index] != 0;
     }
 }
