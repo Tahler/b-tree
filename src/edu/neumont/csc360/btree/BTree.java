@@ -3,8 +3,8 @@ package edu.neumont.csc360.btree;
 import edu.neumont.csc360.btree.storage.NodeStore;
 
 public class BTree {
-    private NodeStore nodeStore;
-    private Node root;
+    protected NodeStore nodeStore;
+    protected Node root;
 
     private BTree() {}
 
@@ -14,10 +14,17 @@ public class BTree {
     }
 
     public static BTree open(String name) {
-        NodeStore nodeStore = NodeStore.open(name);
         BTree bTree = new BTree();
+
+        NodeStore nodeStore = NodeStore.open(name);
         bTree.nodeStore = nodeStore;
-        bTree.root = nodeStore.getRootNode();
+
+        Node root = nodeStore.getRootNode();
+        root.bTree = bTree;
+        root.parent = null;
+        root.index = 0;
+        bTree.root = root;
+
         return bTree;
     }
 
