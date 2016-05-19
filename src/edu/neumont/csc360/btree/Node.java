@@ -3,7 +3,8 @@ package edu.neumont.csc360.btree;
 import edu.neumont.csc360.btree.utils.ByteUtils;
 
 public class Node {
-    private static final int NODE_METADATA_SIZE = 5;
+    protected static final int NODE_METADATA_SIZE = 5;
+    protected static final int KEY_VALUE_PAIR_SIZE = 8;
 
     // Not persisted
     protected BTree bTree;
@@ -16,6 +17,18 @@ public class Node {
     private KeyValuePair[] data;
 
     private Node() {}
+
+    /**
+     * Constructs a new root node.
+     */
+    public Node(int capacity) {
+        this.isLeaf = true;
+        this.size = 0;
+        this.data = new KeyValuePair[capacity];
+        for (int i = 0; i < this.data.length; i++) {
+            this.data[i] = new KeyValuePair(0, 0);
+        }
+    }
 
     public Node(BTree bTree, Node parent, int index, boolean isLeaf, int capacity) {
         this(bTree, parent, index, isLeaf, 0, new KeyValuePair[capacity]);
@@ -42,10 +55,10 @@ public class Node {
         node.isLeaf = ByteUtils.booleanFromByteInByteArray(bytes, 0);
         node.size = ByteUtils.intFromBytesInByteArray(bytes, 1);
 
-        int numKvps = (bytes.length - NODE_METADATA_SIZE) / 8;
+        int numKvps = (bytes.length - NODE_METADATA_SIZE) / KEY_VALUE_PAIR_SIZE;
         KeyValuePair[] data = new KeyValuePair[numKvps];
         for (int i = 0; i < numKvps; i++) {
-            int offset = NODE_METADATA_SIZE + i * 8;
+            int offset = NODE_METADATA_SIZE + i * KEY_VALUE_PAIR_SIZE;
 
             int key = ByteUtils.intFromBytesInByteArray(bytes, offset);
             int value = ByteUtils.intFromBytesInByteArray(bytes, offset + 4);
@@ -58,12 +71,13 @@ public class Node {
     }
 
     protected int[] toByteArray() {
-        int[] bytes = new int[NODE_METADATA_SIZE + this.data.length * 8];
+        int[] bytes = new int[NODE_METADATA_SIZE + this.data.length * KEY_VALUE_PAIR_SIZE];
 
-        ByteUtils.writeBytesFromIntToByteArray(this.size, bytes, 0);
+        ByteUtils.writeBooleanToByteArray(this.isLeaf, bytes, 0);
+        ByteUtils.writeBytesFromIntToByteArray(this.size, bytes, 1);
         for (int i = 0; i < this.data.length; i++) {
             KeyValuePair kvp = this.data[i];
-            int offset = NODE_METADATA_SIZE + i * 8;
+            int offset = NODE_METADATA_SIZE + i * KEY_VALUE_PAIR_SIZE;
 
             ByteUtils.writeBytesFromIntToByteArray(kvp.key, bytes, offset);
             ByteUtils.writeBytesFromIntToByteArray(kvp.value, bytes, offset + 4);
@@ -77,8 +91,8 @@ public class Node {
      */
     public void addKey(int key, int value) {
         if (this.isLeaf) {
-            if (this.isFull()) {
-                this.splitAndAdd(key, value);
+            if (this.isRoot()) {
+                this.insertKey(key, value);
             } else {
                 int oldMaxKey = this.maxKey();
                 this.insertKey(key, value);
@@ -132,7 +146,7 @@ public class Node {
     private KeyValuePair searchForKvp(int key) {
         KeyValuePair foundKvp = null;
         int loIndex = 0;
-        int hiIndex = this.data.length - 1;
+        int hiIndex = this.size - 1;
         while (loIndex <= hiIndex) {
             int midIndex = loIndex + (hiIndex - loIndex) / 2;
             KeyValuePair kvp = this.data[midIndex];
@@ -143,6 +157,7 @@ public class Node {
                 loIndex = midIndex + 1;
             } else { // key == mid
                 foundKvp = kvp;
+                break;
             }
         }
         return foundKvp;
@@ -247,7 +262,7 @@ public class Node {
     }
 
     private int maxKey() {
-        return this.data[this.data.length - 1].key;
+        return this.size > 0 ? this.data[this.size - 1].key : 0;
     }
 
     private void insertKey(int key, int value) {
@@ -264,7 +279,6 @@ public class Node {
             }
             this.data[previousIndex] = new KeyValuePair(key, value);
             this.size += 1;
-            this.rewrite();
         }
     }
 

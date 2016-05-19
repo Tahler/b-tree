@@ -14,7 +14,8 @@ public class NodeStore {
         if (nodeCapacity <= 0) {
             throw new RuntimeException("Node capacity cannot be less than 0 bytes.");
         }
-        CachedPersistentArray.create(name, NODE_STORE_METADATA_SIZE, 0); // TODO 0 - sizeof(Node)
+        int sizeOfNode = Node.NODE_METADATA_SIZE + nodeCapacity * Node.KEY_VALUE_PAIR_SIZE;
+        CachedPersistentArray.create(name, NODE_STORE_METADATA_SIZE, sizeOfNode);
 
         int[] metadata = new int[NODE_STORE_METADATA_SIZE];
 

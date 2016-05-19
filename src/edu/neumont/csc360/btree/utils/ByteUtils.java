@@ -36,4 +36,8 @@ public class ByteUtils {
     public static boolean booleanFromByteInByteArray(int[] srcArray, int index) {
         return srcArray[index] != 0;
     }
+
+    public static void writeBooleanToByteArray(boolean isLeaf, int[] destArray, int start) {
+        destArray[start] = isLeaf ? 1 : 0;
+    }
 }

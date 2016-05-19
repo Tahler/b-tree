@@ -9,7 +9,10 @@ public class BTree {
 
     public static void create(String name, int nodeCapacity) {
         NodeStore.create(name, nodeCapacity);
-        NodeStore.open(name).allocate();
+        NodeStore nodeStore = NodeStore.open(name);
+        int rootIndex = nodeStore.allocate();
+        Node root = new Node(nodeCapacity);
+        nodeStore.putNode(rootIndex, root);
     }
 
     public static BTree open(String name) {
