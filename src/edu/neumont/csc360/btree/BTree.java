@@ -3,6 +3,7 @@ package edu.neumont.csc360.btree;
 public class BTree {
     protected NodeStore nodeStore;
     protected Node root;
+    protected int nodeCapacity;
 
     private BTree() {}
 
@@ -22,6 +23,7 @@ public class BTree {
         root.parent = null;
         root.index = 0;
         bTree.root = root;
+        bTree.nodeCapacity = nodeStore.getNodeCapacity();
 
         return bTree;
     }
