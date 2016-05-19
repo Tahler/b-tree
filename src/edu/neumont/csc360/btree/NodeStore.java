@@ -65,7 +65,8 @@ public class NodeStore {
     }
 
     public void putNode(int index, Node node) {
-        node.toByteArray()
+        int[] buffer = node.toByteArray();
+        this.cachedPersistentArray.putBuffer(index, buffer);
     }
 
     public void addNode(Node node) {
@@ -73,8 +74,20 @@ public class NodeStore {
         this.putNode(index, node);
     }
 
+    public void addRoot(Node newRoot) {
+        this.addNode(newRoot);
+        int newRootIndex = newRoot.index;
+        this.setRootNodeIndex(newRootIndex);
+    }
+
+    public void writeNode(Node node) {
+        int index = node.index;
+        this.putNode(index, node);
+    }
+
     public Node getNode(int index) {
-        // TODO
+        int[] buffer = this.cachedPersistentArray.getBuffer(index);
+        return Node.fromByteArray(buffer);
     }
 
     public Node getRootNode() {
@@ -86,15 +99,14 @@ public class NodeStore {
         this.rewriteMetadata();
     }
 
+    public int getNodeCapacity() {
+        return this.nodeCapacity;
+    }
+
     private void rewriteMetadata() {
         int[] metadata = new int[NODE_STORE_METADATA_SIZE];
-
-        int[] nodeCapacityBytes = ByteUtils.bytesFromInt(this.nodeCapacity);
-        System.arraycopy(nodeCapacityBytes, 0, metadata, 0, 4);
-
-        int[] rootNodeIndexBytes = ByteUtils.bytesFromInt(this.rootNodeIndex);
-        System.arraycopy(rootNodeIndexBytes, 0, metadata, 4, 4);
-
+        ByteUtils.writeBytesFromIntToByteArray(this.nodeCapacity, metadata, 0);
+        ByteUtils.writeBytesFromIntToByteArray(this.rootNodeIndex, metadata, 4);
         this.cachedPersistentArray.writeMetadata(metadata);
     }
 }
