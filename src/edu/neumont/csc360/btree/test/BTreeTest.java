@@ -135,6 +135,19 @@ public class BTreeTest {
     }
 
     @Test
+    public void updateKeysValue1000Keys() throws Exception {
+        this.add1000KeysIncreasing();
+
+        BTree bTree = BTree.open(testFile);
+        Assert.assertEquals(660, bTree.getValue(660));
+
+        bTree.updateKeysValue(660, Integer.MIN_VALUE);
+        Assert.assertEquals(Integer.MIN_VALUE, bTree.getValue(660));
+
+        bTree.close();
+    }
+
+    @Test
     public void deleteKey() throws Exception {
         this.splitAndAdd();
 
