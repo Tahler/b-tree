@@ -75,12 +75,6 @@ public class NodeStore {
         this.putNode(index, node);
     }
 
-    public void addRoot(Node newRoot) {
-        this.addNode(newRoot);
-        int newRootIndex = newRoot.index;
-        this.setRootNodeIndex(newRootIndex);
-    }
-
     public void writeNode(Node node) {
         int index = node.index;
         this.putNode(index, node);

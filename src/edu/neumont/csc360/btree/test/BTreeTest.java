@@ -28,6 +28,22 @@ public class BTreeTest {
     }
 
     @Test
+    public void split() throws Exception {
+        Files.deleteIfExists(Paths.get(testFile));
+
+        BTree.create(testFile, 3);
+        BTree bTree = BTree.open(testFile);
+
+        bTree.addKey(1, 10);
+        bTree.addKey(2, 20);
+        bTree.addKey(3, 30);
+        bTree.addKey(0, 1);
+
+        int actualValue = bTree.getValue(1);
+        Assert.assertEquals(10, actualValue);
+    }
+
+    @Test
     public void add100Keys() throws Exception {
         Files.deleteIfExists(Paths.get(testFile));
 
@@ -47,7 +63,6 @@ public class BTreeTest {
             int actualValue = bTree.getValue(key);
             Assert.assertEquals(expectedValue, actualValue);
         }
-
     }
 
     @Test

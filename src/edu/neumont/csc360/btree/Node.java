@@ -25,9 +25,6 @@ public class Node {
         this.isLeaf = true;
         this.size = 0;
         this.data = new KeyValuePair[capacity];
-        for (int i = 0; i < this.data.length; i++) {
-            this.data[i] = new KeyValuePair(0, 0);
-        }
     }
 
     public Node(BTree bTree, Node parent, int index, boolean isLeaf, int capacity) {
@@ -77,10 +74,11 @@ public class Node {
         ByteUtils.writeBytesFromIntToByteArray(this.size, bytes, 1);
         for (int i = 0; i < this.data.length; i++) {
             KeyValuePair kvp = this.data[i];
-            int offset = NODE_METADATA_SIZE + i * KEY_VALUE_PAIR_SIZE;
-
-            ByteUtils.writeBytesFromIntToByteArray(kvp.key, bytes, offset);
-            ByteUtils.writeBytesFromIntToByteArray(kvp.value, bytes, offset + 4);
+            if (kvp != null) {
+                int offset = NODE_METADATA_SIZE + i * KEY_VALUE_PAIR_SIZE;
+                ByteUtils.writeBytesFromIntToByteArray(kvp.key, bytes, offset);
+                ByteUtils.writeBytesFromIntToByteArray(kvp.value, bytes, offset + 4);
+            }
         }
 
         return bytes;
@@ -111,7 +109,7 @@ public class Node {
     public int getValue(int key) {
         int value;
         if (this.isLeaf) {
-            KeyValuePair foundKvp = this.searchForKvp(key);
+            KeyValuePair foundKvp = this.searchForKey(key);
             value = foundKvp.value; // technically could be null
         } else {
             Node child = this.childWithKey(key);
@@ -122,7 +120,7 @@ public class Node {
 
     public void updateKeysValue(int key, int value) {
         if (this.isLeaf) {
-            KeyValuePair toBeUpdated = this.searchForKvp(key);
+            KeyValuePair toBeUpdated = this.searchForKey(key);
             toBeUpdated.value = value;
             this.rewrite();
         } else {
@@ -143,7 +141,7 @@ public class Node {
         }
     }
 
-    private KeyValuePair searchForKvp(int key) {
+    private KeyValuePair searchForKey(int key) {
         KeyValuePair foundKvp = null;
         int loIndex = 0;
         int hiIndex = this.size - 1;
@@ -166,7 +164,7 @@ public class Node {
     private KeyValuePair searchForValue(int value) {
         KeyValuePair foundKvp = null;
         int loIndex = 0;
-        int hiIndex = this.data.length - 1;
+        int hiIndex = this.size - 1;
         while (loIndex <= hiIndex) {
             int midIndex = loIndex + (hiIndex - loIndex) / 2;
             KeyValuePair kvp = this.data[midIndex];
@@ -177,6 +175,7 @@ public class Node {
                 loIndex = midIndex + 1;
             } else { // value == mid
                 foundKvp = kvp;
+                break;
             }
         }
         return foundKvp;
@@ -191,14 +190,13 @@ public class Node {
     }
 
     private Node childWithKey(int key) {
-        int childIndex = -1;
-        for (KeyValuePair kvp : this.data) {
-            if (key < kvp.key) {
+        int childIndex = this.data[this.size - 1].value; // default value, in case trying to find a key greater than any current keys
+        for (int i = 0; i < this.size; i++) {
+            KeyValuePair kvp = this.data[i];
+            if (key <= kvp.key) {
                 childIndex = kvp.value;
+                break;
             }
-        }
-        if (childIndex == -1) {
-            childIndex = this.size - 1;
         }
         Node child = this.bTree.nodeStore.getNode(childIndex);
         child.bTree = this.bTree;
@@ -212,18 +210,20 @@ public class Node {
         int firstHalfLength = dataLength / 2;
         int secondHalfLength = dataLength - firstHalfLength;
 
-        KeyValuePair[] firstHalf = new KeyValuePair[firstHalfLength];
+        KeyValuePair[] firstHalf = new KeyValuePair[dataLength];
         System.arraycopy(this.data, 0, firstHalf, 0, firstHalfLength);
 
-        KeyValuePair[] secondHalf = new KeyValuePair[secondHalfLength];
-        System.arraycopy(this.data, firstHalfLength, firstHalf, 0, secondHalfLength);
+        KeyValuePair[] secondHalf = new KeyValuePair[dataLength];
+        System.arraycopy(this.data, firstHalfLength, secondHalf, 0, secondHalfLength);
 
         this.size = firstHalfLength;
         this.data = firstHalf;
 
-        Node otherNode = new Node(this.isLeaf, secondHalfLength, secondHalf);
+        int otherNodeIndex = this.bTree.nodeStore.allocate();
+        Node otherNode = new Node(this.bTree, this.parent, -1, this.isLeaf, secondHalfLength, secondHalf);
+        otherNode.index = otherNodeIndex;
 
-        this.bTree.nodeStore.addNode(otherNode);
+        this.bTree.nodeStore.putNode(otherNodeIndex, otherNode);
         this.bTree.nodeStore.writeNode(this);
 
         if (key < this.maxKey()) {
@@ -236,12 +236,13 @@ public class Node {
         int otherMax = otherNode.maxKey();
 
         if (this.isRoot()) {
-            KeyValuePair routeToThis = new KeyValuePair(thisMax, this.index);
-            KeyValuePair routeToOther = new KeyValuePair(otherMax, otherNode.index);
-            KeyValuePair[] routes = new KeyValuePair[] { routeToThis, routeToOther };
+            Node newRoot = new Node(this.bTree, null, -1, false, 0, new KeyValuePair[this.bTree.nodeCapacity]);
+            newRoot.insertKey(thisMax, this.index);
+            newRoot.insertKey(otherMax, otherNode.index);
 
-            Node newRoot = new Node(false, 2, routes);
-            this.bTree.nodeStore.addRoot(newRoot);
+            int newRootIndex = this.bTree.nodeStore.allocate();
+            newRoot.index = newRootIndex;
+            this.bTree.nodeStore.putNode(newRootIndex, newRoot);
 
             this.bTree.root = newRoot;
 
@@ -289,11 +290,11 @@ public class Node {
         kvpToUpdate.key = newKey;
 
         int newMaxKey = this.maxKey();
-        if (oldMaxKey != newMaxKey) {
+        if (!this.isRoot() && oldMaxKey != newMaxKey) {
             this.parent.updateKeyFromChild(this.index, newMaxKey);
         }
 
-        this.rewrite();
+        this.rewrite(); // TODO index is not known here
     }
 
     private void removeKey(int key) {
