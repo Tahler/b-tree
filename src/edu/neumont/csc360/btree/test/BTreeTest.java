@@ -25,10 +25,12 @@ public class BTreeTest {
 
         int actualValue = bTree.getValue(key);
         Assert.assertEquals(value, actualValue);
+
+        bTree.close();
     }
 
     @Test
-    public void split() throws Exception {
+    public void splitAndAdd() throws Exception {
         Files.deleteIfExists(Paths.get(testFile));
 
         BTree.create(testFile, 3);
@@ -43,6 +45,8 @@ public class BTreeTest {
             int gotValue = bTree.getValue(key);
             Assert.assertEquals(value, gotValue);
         }
+
+        bTree.close();
     }
 
     @Test
@@ -65,6 +69,8 @@ public class BTreeTest {
             int actualValue = bTree.getValue(key);
             Assert.assertEquals(expectedValue, actualValue);
         }
+
+        bTree.close();
     }
 
     @Test
@@ -87,11 +93,32 @@ public class BTreeTest {
             int actualValue = bTree.getValue(key);
             Assert.assertEquals(expectedValue, actualValue);
         }
+
+        bTree.close();
     }
 
     @Test
-    public void getValue() throws Exception {
+    public void add1000KeysDecreasing() throws Exception {
+        Files.deleteIfExists(Paths.get(testFile));
 
+        BTree.create(testFile, 100);
+        BTree bTree = BTree.open(testFile);
+        int[] keys = new int[1000];
+        int[] values = new int[1000];
+        for (int i = keys.length - 1; i >= 0; i--) {
+            keys[i] = i;
+            values[i] = i;
+            bTree.addKey(keys[i], values[i]);
+        }
+
+        for (int i = keys.length - 1; i >= 0; i--) {
+            int key = keys[i];
+            int expectedValue = values[i];
+            int actualValue = bTree.getValue(key);
+            Assert.assertEquals(expectedValue, actualValue);
+        }
+
+        bTree.close();
     }
 
     @Test
@@ -103,5 +130,4 @@ public class BTreeTest {
     public void deleteKey() throws Exception {
 
     }
-
 }
