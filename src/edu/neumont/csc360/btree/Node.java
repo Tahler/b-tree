@@ -290,7 +290,7 @@ public class Node {
     private void removeKey(int key) {
         int oldMaxKey = this.maxKey();
         KeyValuePair previous = null;
-        int currentIndex = this.data.length - 1;
+        int currentIndex = this.size - 1;
         boolean found = false;
         while (!found || currentIndex >= 0) {
             KeyValuePair current = this.data[currentIndex];

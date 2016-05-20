@@ -123,11 +123,27 @@ public class BTreeTest {
 
     @Test
     public void updateKeysValue() throws Exception {
+        this.add100KeysIncreasing();
 
+        BTree bTree = BTree.open(testFile);
+        Assert.assertEquals(20, bTree.getValue(20));
+
+        bTree.updateKeysValue(20, Integer.MIN_VALUE);
+        Assert.assertEquals(Integer.MIN_VALUE, bTree.getValue(20));
+
+        bTree.close();
     }
 
     @Test
     public void deleteKey() throws Exception {
+        this.splitAndAdd();
 
+        BTree bTree = BTree.open(testFile);
+        for (int i = 0; i < 4; i++) {
+            Assert.assertEquals(2 * i, bTree.getValue(i));
+            bTree.deleteKey(i);
+        }
+
+        bTree.close();
     }
 }
