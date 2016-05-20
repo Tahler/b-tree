@@ -53,9 +53,31 @@ public class BTreeTest {
         BTree bTree = BTree.open(testFile);
         int[] keys = new int[100];
         int[] values = new int[100];
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < keys.length; i++) {
             keys[i] = i;
-            values[i] = 2 * i;
+            values[i] = i;
+            bTree.addKey(keys[i], values[i]);
+        }
+
+        for (int i = 0; i < keys.length; i++) {
+            int key = keys[i];
+            int expectedValue = values[i];
+            int actualValue = bTree.getValue(key);
+            Assert.assertEquals(expectedValue, actualValue);
+        }
+    }
+
+    @Test
+    public void add1000KeysIncreasing() throws Exception {
+        Files.deleteIfExists(Paths.get(testFile));
+
+        BTree.create(testFile, 100);
+        BTree bTree = BTree.open(testFile);
+        int[] keys = new int[1000];
+        int[] values = new int[1000];
+        for (int i = 0; i < keys.length; i++) {
+            keys[i] = i;
+            values[i] = i;
             bTree.addKey(keys[i], values[i]);
         }
 

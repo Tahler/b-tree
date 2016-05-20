@@ -68,11 +68,15 @@ public class Node {
             if (this.isRoot()) {
                 this.insertKey(key, value);
             } else {
-                int oldMaxKey = this.maxKey();
-                this.insertKey(key, value);
-                int newMaxKey = this.maxKey();
-                if (oldMaxKey != newMaxKey) {
-                    this.parent.updateKeyFromChild(this.index, newMaxKey);
+                if (this.isFull()) {
+                    this.splitAndAdd(key, value);
+                } else {
+                    int oldMaxKey = this.maxKey();
+                    this.insertKey(key, value);
+                    int newMaxKey = this.maxKey();
+                    if (oldMaxKey != newMaxKey) {
+                        this.parent.updateKeyFromChild(this.index, newMaxKey);
+                    }
                 }
             }
             this.rewrite();
@@ -219,12 +223,13 @@ public class Node {
 
         if (this.isRoot()) {
             int newRootIndex = this.bTree.nodeStore.allocate();
-            KeyValuePair[] rootRoutes = new KeyValuePair[3];
+            KeyValuePair[] rootRoutes = new KeyValuePair[this.bTree.nodeCapacity];
             rootRoutes[0] = new KeyValuePair(thisMax, this.index);
             rootRoutes[1] = new KeyValuePair(otherMax, otherNode.index);
             Node newRoot = new Node(this.bTree, null, newRootIndex, false, 2, rootRoutes);
 
             this.bTree.nodeStore.putNode(newRootIndex, newRoot);
+            this.bTree.nodeStore.setRootNodeIndex(newRootIndex);
 
             this.bTree.root = newRoot;
 
