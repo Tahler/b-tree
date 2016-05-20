@@ -322,14 +322,5 @@ public class Node {
 
         this.bTree.nodeStore.putNode(this.index, this);
     }
-
-    protected static class KeyValuePair {
-        private int key;
-        private int value;
-
-        public KeyValuePair(int key, int value) {
-            this.key = key;
-            this.value = value;
-        }
-    }
 }
+

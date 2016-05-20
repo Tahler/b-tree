@@ -11,7 +11,7 @@ public class BTree {
         NodeStore.create(name, nodeCapacity);
         NodeStore nodeStore = NodeStore.open(name);
         int rootIndex = nodeStore.allocate();
-        Node root = new Node(null, null, rootIndex, true, 0, new Node.KeyValuePair[nodeCapacity]);
+        Node root = new Node(null, null, rootIndex, true, 0, new KeyValuePair[nodeCapacity]);
         nodeStore.putNode(rootIndex, root);
     }
 
@@ -30,6 +30,10 @@ public class BTree {
 
     public static void delete(String name) {
         NodeStore.delete(name);
+    }
+
+    public void close() {
+        this.nodeStore.close();
     }
 
     public void addKey(int key, int value) {
