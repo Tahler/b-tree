@@ -70,23 +70,13 @@ public class NodeStore {
         this.cachedPersistentArray.putBuffer(index, buffer);
     }
 
-    public void addNode(Node node) {
-        int index = this.allocate();
-        this.putNode(index, node);
-    }
-
-    public void writeNode(Node node) {
-        int index = node.index;
-        this.putNode(index, node);
-    }
-
-    public Node getNode(int index) {
+    public Node getNode(int index, BTree bTree, Node parent) {
         int[] buffer = this.cachedPersistentArray.getBuffer(index);
-        return Node.fromByteArray(buffer);
+        return Node.fromByteArray(buffer, bTree, parent, index);
     }
 
-    public Node getRootNode() {
-        return this.getNode(this.rootNodeIndex);
+    public int getRootNodeIndex() {
+        return this.rootNodeIndex;
     }
 
     public void setRootNodeIndex(int rootNodeIndex) {

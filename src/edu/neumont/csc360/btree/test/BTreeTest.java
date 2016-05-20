@@ -34,17 +34,19 @@ public class BTreeTest {
         BTree.create(testFile, 3);
         BTree bTree = BTree.open(testFile);
 
-        bTree.addKey(1, 10);
-        bTree.addKey(2, 20);
-        bTree.addKey(3, 30);
-        bTree.addKey(0, 1);
+        for (int i = 0; i < 4; i++) {
+            int key = i;
+            int value = 2 * i;
 
-        int actualValue = bTree.getValue(1);
-        Assert.assertEquals(10, actualValue);
+            bTree.addKey(key, value);
+
+            int gotValue = bTree.getValue(key);
+            Assert.assertEquals(value, gotValue);
+        }
     }
 
     @Test
-    public void add100Keys() throws Exception {
+    public void add100KeysIncreasing() throws Exception {
         Files.deleteIfExists(Paths.get(testFile));
 
         BTree.create(testFile, 3);

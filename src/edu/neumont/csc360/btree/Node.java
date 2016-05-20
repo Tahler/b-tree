@@ -7,29 +7,14 @@ public class Node {
     protected static final int KEY_VALUE_PAIR_SIZE = 8;
 
     // Not persisted
-    protected BTree bTree;
-    protected Node parent;
-    protected int index;
+    private BTree bTree;
+    private Node parent;
+    private int index;
 
     // Persisted
     private boolean isLeaf;
     private int size;
     private KeyValuePair[] data;
-
-    private Node() {}
-
-    /**
-     * Constructs a new root node.
-     */
-    public Node(int capacity) {
-        this.isLeaf = true;
-        this.size = 0;
-        this.data = new KeyValuePair[capacity];
-    }
-
-    public Node(BTree bTree, Node parent, int index, boolean isLeaf, int capacity) {
-        this(bTree, parent, index, isLeaf, 0, new KeyValuePair[capacity]);
-    }
 
     public Node(BTree bTree, Node parent, int index, boolean isLeaf, int size, KeyValuePair[] data) {
         this.bTree = bTree;
@@ -40,17 +25,9 @@ public class Node {
         this.data = data;
     }
 
-    private Node(boolean isLeaf, int size, KeyValuePair[] data) {
-        this.isLeaf = isLeaf;
-        this.size = size;
-        this.data = data;
-    }
-
-    protected static Node fromByteArray(int[] bytes) {
-        Node node = new Node();
-
-        node.isLeaf = ByteUtils.booleanFromByteInByteArray(bytes, 0);
-        node.size = ByteUtils.intFromBytesInByteArray(bytes, 1);
+    protected static Node fromByteArray(int[] bytes, BTree bTree, Node parent, int nodeIndex) {
+        boolean isLeaf = ByteUtils.booleanFromByteInByteArray(bytes, 0);
+        int size = ByteUtils.intFromBytesInByteArray(bytes, 1);
 
         int numKvps = (bytes.length - NODE_METADATA_SIZE) / KEY_VALUE_PAIR_SIZE;
         KeyValuePair[] data = new KeyValuePair[numKvps];
@@ -62,9 +39,8 @@ public class Node {
 
             data[i] = new KeyValuePair(key, value);
         }
-        node.data = data;
 
-        return node;
+        return new Node(bTree, parent, nodeIndex, isLeaf, size, data);
     }
 
     protected int[] toByteArray() {
@@ -141,7 +117,13 @@ public class Node {
         }
     }
 
+    private boolean isRoot() {
+        return this.parent == null;
+    }
+
     private KeyValuePair searchForKey(int key) {
+        assert this.size > 0;
+
         KeyValuePair foundKvp = null;
         int loIndex = 0;
         int hiIndex = this.size - 1;
@@ -158,10 +140,14 @@ public class Node {
                 break;
             }
         }
+
+        assert foundKvp != null;
         return foundKvp;
     }
 
     private KeyValuePair searchForValue(int value) {
+        assert this.size > 0;
+
         KeyValuePair foundKvp = null;
         int loIndex = 0;
         int hiIndex = this.size - 1;
@@ -178,18 +164,17 @@ public class Node {
                 break;
             }
         }
+
+        assert foundKvp != null;
         return foundKvp;
     }
 
-    public boolean isLeaf() {
-        return this.isLeaf;
-    }
-
-    public boolean isRoot() {
-        return this.parent == null;
-    }
-
+    /**
+     * Treats this node's values as routes to the Node containing the key.
+     */
     private Node childWithKey(int key) {
+        assert !this.isLeaf;
+
         int childIndex = this.data[this.size - 1].value; // default value, in case trying to find a key greater than any current keys
         for (int i = 0; i < this.size; i++) {
             KeyValuePair kvp = this.data[i];
@@ -198,34 +183,31 @@ public class Node {
                 break;
             }
         }
-        Node child = this.bTree.nodeStore.getNode(childIndex);
-        child.bTree = this.bTree;
-        child.parent = this;
-        child.index = childIndex;
-        return child;
+
+        return this.bTree.nodeStore.getNode(childIndex, this.bTree, this);
     }
 
     private void splitAndAdd(int key, int value) {
+        assert this.isFull();
+
+        // split data into two different arrays
         int dataLength = this.data.length;
         int firstHalfLength = dataLength / 2;
         int secondHalfLength = dataLength - firstHalfLength;
-
         KeyValuePair[] firstHalf = new KeyValuePair[dataLength];
         System.arraycopy(this.data, 0, firstHalf, 0, firstHalfLength);
-
         KeyValuePair[] secondHalf = new KeyValuePair[dataLength];
         System.arraycopy(this.data, firstHalfLength, secondHalf, 0, secondHalfLength);
 
+        // adjust this node to have first half
         this.size = firstHalfLength;
         this.data = firstHalf;
 
+        // create a new node with second half
         int otherNodeIndex = this.bTree.nodeStore.allocate();
-        Node otherNode = new Node(this.bTree, this.parent, -1, this.isLeaf, secondHalfLength, secondHalf);
-        otherNode.index = otherNodeIndex;
+        Node otherNode = new Node(this.bTree, this.parent, otherNodeIndex, this.isLeaf, secondHalfLength, secondHalf);
 
-        this.bTree.nodeStore.putNode(otherNodeIndex, otherNode);
-        this.bTree.nodeStore.writeNode(this);
-
+        // add the key that was supposed to be added
         if (key < this.maxKey()) {
             this.insertKey(key, value);
         } else {
@@ -236,12 +218,12 @@ public class Node {
         int otherMax = otherNode.maxKey();
 
         if (this.isRoot()) {
-            Node newRoot = new Node(this.bTree, null, -1, false, 0, new KeyValuePair[this.bTree.nodeCapacity]);
-            newRoot.insertKey(thisMax, this.index);
-            newRoot.insertKey(otherMax, otherNode.index);
-
             int newRootIndex = this.bTree.nodeStore.allocate();
-            newRoot.index = newRootIndex;
+            KeyValuePair[] rootRoutes = new KeyValuePair[3];
+            rootRoutes[0] = new KeyValuePair(thisMax, this.index);
+            rootRoutes[1] = new KeyValuePair(otherMax, otherNode.index);
+            Node newRoot = new Node(this.bTree, null, newRootIndex, false, 2, rootRoutes);
+
             this.bTree.nodeStore.putNode(newRootIndex, newRoot);
 
             this.bTree.root = newRoot;
@@ -252,6 +234,9 @@ public class Node {
             this.parent.updateKeyFromChild(this.index, thisMax);
             this.parent.insertKey(otherMax, otherNode.index);
         }
+
+        this.rewrite();
+        this.bTree.nodeStore.putNode(otherNodeIndex, otherNode);
     }
 
     private boolean isFull() {
@@ -294,7 +279,7 @@ public class Node {
             this.parent.updateKeyFromChild(this.index, newMaxKey);
         }
 
-        this.rewrite(); // TODO index is not known here
+        this.rewrite();
     }
 
     private void removeKey(int key) {
@@ -328,10 +313,12 @@ public class Node {
     }
 
     private void rewrite() {
-        this.bTree.nodeStore.writeNode(this);
+        assert this.index >= 0;
+
+        this.bTree.nodeStore.putNode(this.index, this);
     }
 
-    private static class KeyValuePair {
+    protected static class KeyValuePair {
         private int key;
         private int value;
 

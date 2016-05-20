@@ -11,7 +11,7 @@ public class BTree {
         NodeStore.create(name, nodeCapacity);
         NodeStore nodeStore = NodeStore.open(name);
         int rootIndex = nodeStore.allocate();
-        Node root = new Node(nodeCapacity);
+        Node root = new Node(null, null, rootIndex, true, 0, new Node.KeyValuePair[nodeCapacity]);
         nodeStore.putNode(rootIndex, root);
     }
 
@@ -21,11 +21,8 @@ public class BTree {
         NodeStore nodeStore = NodeStore.open(name);
         bTree.nodeStore = nodeStore;
 
-        Node root = nodeStore.getRootNode();
-        root.bTree = bTree;
-        root.parent = null;
-        root.index = 0;
-        bTree.root = root;
+        int rootNodeIndex = nodeStore.getRootNodeIndex();
+        bTree.root = nodeStore.getNode(rootNodeIndex, bTree, null);
         bTree.nodeCapacity = nodeStore.getNodeCapacity();
 
         return bTree;
